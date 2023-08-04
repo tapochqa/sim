@@ -116,62 +116,66 @@
       (:land land))))
 
 
-(let [w 50
-      h w
-      islands 3
-      
-      
-      land
-      (take (* w h) 
-        (sequence 
-          (map-indexed 
-            (fn [i x] 
-                 {:max-range (helper/rand-in-range 2 5)
-                  :state   WATER}))
-          (range)))
-      
-      land
-      (map-indexed 
-        (fn [i x] 
-          (if  
-            (< i islands)
-            
+(defn generate-land
+  [& {:keys [w islands min max]}]
+  (let [h w 
+        land
+        (take (* w h) 
+          (sequence 
+            (map-indexed 
+              (fn [i x] 
+                   {:max-range (helper/rand-in-range min max)
+                    :state   WATER}))
+            (range)))
+        
+        land
+        (map-indexed 
+          (fn [i x] 
+            (if  
+              (< i islands)
+              
+              (assoc x 
+                :state LAND
+                :island i)
+              x))       
+         land)
+        
+        
+        land
+        (shuffle land)
+        
+        land
+        (map-indexed
+          (fn [i x]
             (assoc x 
-              :state LAND
-              :island i)
-            x))       
-       land)
-      
-      
-      land
-      (shuffle land)
-      
-      land
-      (map-indexed
-        (fn [i x]
-          (assoc x 
-            :x (math/floor-mod i w)
-            :y (math/floor-div i w)
-            :index i))
-        land)
-      
-      land
-      {:w w
-       :h h
-       :islands islands
-       :land land}
-      
-      
-      ]
-  
-  (println)
-  (println)
-  (draw-land (last
-               (take w
-                 (iterate (fn [l] (grow l)) land)))))
+              :x (math/floor-mod i w)
+              :y (math/floor-div i w)
+              :index i))
+          land)
+        
+        land
+        {:w w
+         :h h
+         :islands islands
+         :land land}]
+    
+    (last
+     (take w
+       (iterate (fn [l] (grow l)) land)))))
 
 
 (comment
+  
+  (do
+    (println)
+    (println)
+    (draw-land
+      (generate-land 
+        :w 10 
+        :islands 3 
+        :min 2 
+        :max 5)))
+  
   (concat [1 2] [3 4])
   (= [] ())
   (seq '(1)))
