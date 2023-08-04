@@ -72,12 +72,6 @@
         any-neigbour
         (first filled-neigbours)
         
-        filled-neigbours
-        (filter
-          (fn [c]
-            (= (:island c) (:island any-neigbour)))
-          filled-neigbours)
-        
         no-neighbours
         (remove
           (fn [c] (= (:island c) (:island any-neigbour)))
@@ -117,13 +111,14 @@
 
 
 (defn generate-land
+  "generate a square land of :w width with islands and rivers of a width between :min and :max"
   [& {:keys [w islands min max]}]
   (let [h w 
         land
         (take (* w h) 
           (sequence 
-            (map-indexed 
-              (fn [i x] 
+            (map 
+              (fn [_] 
                    {:max-range (helper/rand-in-range min max)
                     :state   WATER}))
             (range)))
@@ -171,10 +166,10 @@
     (println)
     (draw-land
       (generate-land 
-        :w 10 
-        :islands 3 
+        :w 20
+        :islands 4
         :min 2 
-        :max 5)))
+        :max 3)))
   
   (concat [1 2] [3 4])
   (= [] ())
