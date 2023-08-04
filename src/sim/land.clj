@@ -3,6 +3,9 @@
     [sim.helper :as helper]
     [clojure.math :as math]))
 
+(def WATER "🟦")
+(def LAND  "🟫")
+
 
 (defn in-2d
   [coll x y]
@@ -20,9 +23,9 @@
           (fn [row]
             (mapv
               (fn [cell]
-                (if (= (:state cell) 1)
-                  1
-                  0))
+                (if (= (:state cell) LAND)
+                  LAND
+                  WATER))
               row))
           land)
         
@@ -34,8 +37,7 @@
 
 (defn distance
   [a b]
-  (abs (- a b))
-  )
+  (abs (- b a)))
 
 
 (defn growable?
@@ -44,64 +46,79 @@
   (let [cross
         (filter
           (fn [c]
-            
             (or
               (= (:x c) x)
-              (= (:y c) y)))
+              (= (:y c) y)
+              (= (distance (:x c) x)
+                 (distance (:y c) y))
+              
+              
+              ))
           land)
         
         filled-neigbour?
         (fn [c]
             (and
-              (= (distance (:x c) x) 1)
-              (= (distance (:y c) y) 1)
-              (= (:state c) 1)))
+              (or
+                (= (distance (:x c) x) 1)
+                (= (distance (:y c) y) 1))
+              (= (:state c) LAND)))
         
         filled-neigbours
         (filter
           filled-neigbour?
           cross)
         
+        any-neigbour
+        (first filled-neigbours)
+        
+        filled-neigbours
+        (filter
+          (fn [c]
+            (= (:island c) (:island any-neigbour)))
+          filled-neigbours)
+        
         no-neighbours
         (remove
-          filled-neigbour?
+          (fn [c] (= (:island c) (:island any-neigbour)))
           cross)
         
         interruptors
         (filter
           (fn [c]
             (and
-              (or
-                (< (distance (:x c) x) max-range)
-                (< (distance (:y c) y) max-range))
-              (= (:state c) 1)))
+              (and
+                (<= (distance (:x c) x) max-range)
+                (<= (distance (:y c) y) max-range))
+              (= (:state c) LAND)))
           no-neighbours)]
     
     (if 
       (and
-        (= state 0)
-        (seq filled-neigbours)
+        (= state WATER)
+        (some? any-neigbour)
         (= [] interruptors))
-      true false))
+      (:island any-neigbour) false))
   
   )
 
 
 (defn grow
   [land]
-  
   (assoc land :land
     (map (fn [cell]
-           (if 
-             (growable? cell land)
-             (assoc cell :state 1)
-             cell))
+           (let [island (growable? land cell)]
+             (if 
+               island
+               (assoc cell :state LAND
+                           :island island)
+             cell)))
       (:land land))))
 
 
-(let [w 10
-      h 10
-      islands 2
+(let [w 50
+      h w
+      islands 3
       
       
       land
@@ -109,8 +126,8 @@
         (sequence 
           (map-indexed 
             (fn [i x] 
-                 {:max-range (helper/rand-in-range 1 4)
-                  :state   0}))
+                 {:max-range (helper/rand-in-range 2 5)
+                  :state   WATER}))
           (range)))
       
       land
@@ -120,7 +137,7 @@
             (< i islands)
             
             (assoc x 
-              :state 1
+              :state LAND
               :island i)
             x))       
        land)
@@ -148,8 +165,10 @@
       ]
   
   (println)
-  (draw-land (grow land))
-  (grow land))
+  (println)
+  (draw-land (last
+               (take w
+                 (iterate (fn [l] (grow l)) land)))))
 
 
 (comment
